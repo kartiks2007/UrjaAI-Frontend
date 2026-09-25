@@ -1,0 +1,83 @@
+/* Incremental responsive refinements; desktop branding and layout are retained. */
+.app-shell { min-height: 100dvh; }
+.sidebar { overflow-y: auto; }
+.page-heading > div, .panel-heading > div, .feedback > div,
+.detail-list dd, .listing-card, .chart, .date-filter label { min-width: 0; }
+.page-heading h1, .feedback, .detail-list dd, .listing-card h2,
+.user-summary strong, .metric > div { overflow-wrap: anywhere; }
+.table-scroll { max-width: 100%; overscroll-behavior-x: contain; }
+.table-scroll:focus-visible { outline-offset: -3px; }
+.dialog-content { max-height: calc(100dvh - 32px); overscroll-behavior: contain; }
+.dialog-close { min-width: 44px; min-height: 44px; }
+.dialog-content > h2 { margin-right: 44px; }
+.tabs { max-width: 100%; }
+.row-actions, .form-footer, .heading-actions { flex-wrap: wrap; }
+.recharts-default-tooltip { max-width: min(280px, 75vw); white-space: normal; }
+.page-content { padding-bottom: max(40px, env(safe-area-inset-bottom)); }
+
+@media (max-width: 1024px) {
+  .sidebar { display: none; }
+  .workspace-main { margin-left: 0; }
+  .mobile-menu { display: inline-flex; }
+  .topbar { padding-top: env(safe-area-inset-top); height: auto; min-height: 64px; }
+  .dialog-content:has(.mobile-nav) {
+    inset: 0 auto 0 0; transform: none; width: min(360px, 90vw);
+    height: 100dvh; max-height: 100dvh; border-radius: 0 12px 12px 0;
+    padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+  }
+  .mobile-nav .nav-link { min-height: 46px; font-size: 14px; }
+  .mobile-nav .workspace-select strong { max-width: 220px; }
+  .btn, .btn-sm, .btn-icon, .heading-actions .btn, .empty .btn,
+  .tabs button, .password-input button, .notification-button, .small-avatar {
+    min-height: 44px;
+  }
+  .btn-icon, .password-input button, .small-avatar { min-width: 44px; }
+  .notification-button { display: inline-flex; align-items: center; padding-inline: 12px; }
+  input, select, textarea, .toolbar select, .date-filter input { font-size: 16px; min-height: 44px; min-width: 0; }
+  .back-link, .forgot-link, .text-link, .auth-switch a, summary { min-height: 44px; align-content: center; }
+  .metric > p, .metric > span, .panel-heading p, .field small,
+  .empty p, .chart-empty p, .onboarding p, .panel-note, .feedback > div > div { font-size: 12px; }
+  .field > label, .btn, .heading-actions .btn, .tabs button { font-size: 14px; }
+  .date-filter { flex-wrap: wrap; }
+  .date-filter label { flex: 1 1 140px; }
+  .date-filter input { max-width: 100%; }
+  .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 768px) {
+  .page-heading { flex-wrap: wrap; }
+  .heading-actions { max-width: 100%; }
+  .topbar { padding-inline: max(12px, env(safe-area-inset-left)); }
+  .topbar > div { gap: 6px; min-width: 0; }
+  .topbar-right .connection { display: none; }
+  .breadcrumb { font-size: 11px; gap: 5px; }
+  .breadcrumb strong { overflow-wrap: anywhere; }
+  .page-content { padding-inline: max(16px, env(safe-area-inset-left)); }
+  .form-grid, .two-column, .form-layout { grid-template-columns: minmax(0, 1fr); }
+  .operational-strip span { white-space: normal; font-size: 12px; }
+  .operational-strip > div { padding-inline: 12px; }
+  .panel-heading { flex-wrap: wrap; }
+  .page-heading p, .settings-panel > p, .empty h3 { font-size: 14px; }
+  .chart { padding-inline: 4px; }
+  .chart summary { padding-inline: 12px; font-size: 12px; }
+  .table-scroll::before { content: "Swipe table horizontally to see all columns"; display: block; padding: 10px 14px; font-size: 12px; color: var(--muted); }
+  table { font-size: 13px; }
+  th, td { padding: 14px; }
+  th, td small, td p { font-size: 12px; }
+  .alert-row { flex-wrap: wrap; }
+  .auth-main { min-height: 100dvh; padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+  .share-search > input, .share-search > .search-input { flex: 1 1 100%; width: 100%; }
+  .availability-list li { flex-wrap: wrap; }
+  .dialog-content { padding: 20px; }
+}
+
+@media (max-width: 380px) {
+  .metric-grid, .telemetry-grid { grid-template-columns: minmax(0, 1fr); }
+  .operational-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .operational-strip > div { border: 0; }
+  .page-content { padding-inline: 12px; }
+  .hero-actions, .landing-nav > div { flex-wrap: wrap; gap: 8px; }
+  .landing-nav { gap: 8px; padding-inline: 12px; }
+  .landing-nav .brand { font-size: 21px; }
+  .hero h1 { font-size: 34px; }
+}
