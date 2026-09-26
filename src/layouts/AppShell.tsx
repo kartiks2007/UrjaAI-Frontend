@@ -22,6 +22,7 @@ import { useAppPath, useMe, usePreview } from "../auth/AuthProvider";
 import { supabase } from "../lib/supabase";
 import { Brand, Button, Feedback, Modal } from "../components/ui";
 import { AiChatDrawer } from "../components/AiChatDrawer";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 
 const nav = [
   ["Overview", "/dashboard", LayoutDashboard],
@@ -224,7 +225,9 @@ export default function AppShell() {
         )}
         <main id="main" className="page-content">
           {error && <Feedback kind="error" title={error} />}
-          <Outlet />
+          <ErrorBoundary fallbackTitle="Unable to display workspace page">
+            <Outlet />
+          </ErrorBoundary>
         </main>
         <AiChatDrawer
           open={aiChatOpen}

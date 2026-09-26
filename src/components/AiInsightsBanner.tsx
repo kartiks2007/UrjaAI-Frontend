@@ -93,8 +93,9 @@ export function AiInsightsBanner({ onOpenChat }: AiInsightsBannerProps) {
     );
   }
 
-  const criticalAnomalies = report.anomalies_detected.filter((a) => a.severity === "CRITICAL");
-  const warningAnomalies = report.anomalies_detected.filter((a) => a.severity === "WARNING");
+  const allAnomalies = Array.isArray(report.anomalies_detected) ? report.anomalies_detected : [];
+  const criticalAnomalies = allAnomalies.filter((a) => a && a.severity === "CRITICAL");
+  const warningAnomalies = allAnomalies.filter((a) => a && a.severity === "WARNING");
 
   return (
     <section className="ai-banner-card" aria-label="AI Diagnostics & Plant Intelligence">

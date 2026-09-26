@@ -141,21 +141,22 @@ export function Status({
   value,
   stale = false,
 }: {
-  value: string;
+  value?: string | null;
   stale?: boolean;
 }) {
+  const safe = (value || "UNKNOWN").toUpperCase();
   const Icon =
-    value === "RUNNING"
+    safe === "RUNNING"
       ? Check
-      : value === "IDLE"
+      : safe === "IDLE"
         ? Pause
-        : value === "OFFLINE"
+        : safe === "OFFLINE"
           ? WifiOff
           : Circle;
   return (
-    <span className={cn("status", value.toLowerCase(), stale && "stale")}>
+    <span className={cn("status", safe.toLowerCase(), stale && "stale")}>
       <Icon size={12} />
-      {label(value)}
+      {label(safe)}
       {stale ? " · stale" : ""}
     </span>
   );

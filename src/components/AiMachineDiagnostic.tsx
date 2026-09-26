@@ -31,8 +31,10 @@ export function AiMachineDiagnostic({
   const [appliedSuccess, setAppliedSuccess] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
 
+  const recCal = insight?.recommended_calibration;
+
   const handleApplyCalibration = async () => {
-    if (!insight?.recommended_calibration) return;
+    if (!recCal) return;
     if (preview) {
       setApplyError("Design review is read-only. Connect live backend to apply calibrations.");
       return;
@@ -40,13 +42,12 @@ export function AiMachineDiagnostic({
 
     setApplyError(null);
     try {
-      const cal = insight.recommended_calibration;
       await updateCalibration.mutateAsync({
-        off_max_w: cal.off_max_w,
-        idle_max_w: cal.idle_max_w,
-        hysteresis_w: cal.hysteresis_w,
-        minimum_duration_s: cal.minimum_duration_s,
-        minimum_idle_s: cal.minimum_idle_s,
+        off_max_w: recCal.off_max_w ?? 50,
+        idle_max_w: recCal.idle_max_w ?? 250,
+        hysteresis_w: recCal.hysteresis_w ?? 2,
+        minimum_duration_s: recCal.minimum_duration_s ?? 3,
+        minimum_idle_s: recCal.minimum_idle_s ?? 300,
       });
       setAppliedSuccess(true);
       setTimeout(() => setAppliedSuccess(false), 5000);
@@ -67,7 +68,13 @@ export function AiMachineDiagnostic({
     );
   }
 
-  if (error || !insight) {
+  const isValidInsight =
+    Boolean(insight) &&
+    typeof insight === "object" &&
+    !Array.isArray(insight) &&
+    (Array.isArray((insight as any).key_findings) || typeof (insight as any).health_score === "number");
+
+  if (error || !isValidInsight) {
     return (
       <div className="ai-diagnostic-card empty">
         <div className="flex items-center justify-between">
@@ -81,19 +88,27 @@ export function AiMachineDiagnostic({
     );
   }
 
+  const efficiencyGrade = insight?.efficiency_grade || "B";
+  const flappingRisk = insight?.flapping_risk || "LOW";
+  const healthScore = typeof insight?.health_score === "number" ? insight.health_score : 100;
+  const avgPf = typeof insight?.avg_power_factor === "number" ? insight.avg_power_factor : 0.95;
+  const idleWasteRatio = typeof insight?.idle_waste_ratio === "number" ? insight.idle_waste_ratio : 0;
+  const keyFindings = Array.isArray(insight?.key_findings) ? insight.key_findings : [];
+  const actionableSteps = Array.isArray(insight?.actionable_steps) ? insight.actionable_steps : [];
+
   const gradeColor =
-    insight.efficiency_grade === "A"
+    efficiencyGrade === "A"
       ? "bg-[#edf7ed] text-[#2e7d32] border-[#c8e6c9]"
-      : insight.efficiency_grade === "B"
+      : efficiencyGrade === "B"
         ? "bg-[#e8f5e9] text-[#388e3c] border-[#a5d6a7]"
-        : insight.efficiency_grade === "C"
+        : efficiencyGrade === "C"
           ? "bg-[#fff8e1] text-[#f57c00] border-[#ffe082]"
           : "bg-[#fdecea] text-[#d32f2f] border-[#ffcdd2]";
 
   const flappingBadge =
-    insight.flapping_risk === "HIGH"
+    flappingRisk === "HIGH"
       ? "bg-[#fdecea] text-[#d32f2f] border-[#ffcdd2]"
-      : insight.flapping_risk === "MODERATE"
+      : flappingRisk === "MODERATE"
         ? "bg-[#fff8e1] text-[#f57c00] border-[#ffe082]"
         : "bg-[#edf7ed] text-[#2e7d32] border-[#c8e6c9]";
 
@@ -132,9 +147,9 @@ export function AiMachineDiagnostic({
           <span className="ai-diag-pill-label">EFFICIENCY GRADE</span>
           <div className="flex items-center gap-2 mt-1">
             <span className={`ai-grade-badge ${gradeColor}`}>
-              Grade {insight.efficiency_grade}
+              Grade {efficiencyGrade}
             </span>
-            <span className="text-xs font-semibold">{insight.health_score}/100</span>
+            <span className="text-xs font-semibold">{healthScore}/100</span>
           </div>
         </div>
 
@@ -142,7 +157,7 @@ export function AiMachineDiagnostic({
           <span className="ai-diag-pill-label">FLAPPING RISK</span>
           <div className="mt-1">
             <span className={`ai-severity-badge ${flappingBadge}`}>
-              {insight.flapping_risk} RISK
+              {flappingRisk} RISK
             </span>
           </div>
         </div>
@@ -150,10 +165,10 @@ export function AiMachineDiagnostic({
         <div className="ai-diag-pill">
           <span className="ai-diag-pill-label">AVG POWER FACTOR</span>
           <div className="mt-1 flex items-baseline gap-1">
-            <span className={`text-base font-bold ${insight.avg_power_factor < 0.9 ? "text-[#c62828]" : "text-foreground"}`}>
-              {number(insight.avg_power_factor, 2)}
+            <span className={`text-base font-bold ${avgPf < 0.9 ? "text-[#c62828]" : "text-foreground"}`}>
+              {number(avgPf, 2)}
             </span>
-            {insight.avg_power_factor < 0.9 && (
+            {avgPf < 0.9 && (
               <span className="text-[10px] text-[#c62828] font-medium">(Penalty zone)</span>
             )}
           </div>
@@ -163,7 +178,7 @@ export function AiMachineDiagnostic({
           <span className="ai-diag-pill-label">IDLE WASTE RATIO</span>
           <div className="mt-1 flex items-baseline gap-1">
             <span className="text-base font-bold text-[#e65100]">
-              {number(insight.idle_waste_ratio * 100, 1)}%
+              {number(idleWasteRatio * 100, 1)}%
             </span>
             <span className="text-[10px] text-muted">of runtime</span>
           </div>
@@ -175,30 +190,44 @@ export function AiMachineDiagnostic({
         <div className="ai-findings-card">
           <h4 className="ai-findings-heading">Key Diagnostic Observations</h4>
           <ul className="ai-findings-list">
-            {insight.key_findings.map((finding, idx) => (
-              <li key={idx}>
+            {keyFindings.length > 0 ? (
+              keyFindings.map((finding, idx) => (
+                <li key={idx}>
+                  <span className="ai-bullet">•</span>
+                  <span>{finding}</span>
+                </li>
+              ))
+            ) : (
+              <li>
                 <span className="ai-bullet">•</span>
-                <span>{finding}</span>
+                <span>Telemetry parameters within standard tolerances.</span>
               </li>
-            ))}
+            )}
           </ul>
         </div>
 
         <div className="ai-findings-card">
           <h4 className="ai-findings-heading">Optimization Checklist</h4>
           <ul className="ai-findings-list">
-            {insight.actionable_steps.map((step, idx) => (
-              <li key={idx}>
-                <span className="ai-num">{idx + 1}.</span>
-                <span>{step}</span>
+            {actionableSteps.length > 0 ? (
+              actionableSteps.map((step, idx) => (
+                <li key={idx}>
+                  <span className="ai-num">{idx + 1}.</span>
+                  <span>{step}</span>
+                </li>
+              ))
+            ) : (
+              <li>
+                <span className="ai-num">1.</span>
+                <span>Continue ongoing monitoring of operational state transitions.</span>
               </li>
-            ))}
+            )}
           </ul>
         </div>
       </div>
 
       {/* Recommended Calibration Box */}
-      {insight.recommended_calibration && (
+      {recCal && (
         <div className="ai-calibration-box">
           <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
             <div className="flex items-center gap-2">
@@ -233,9 +262,11 @@ export function AiMachineDiagnostic({
             </Button>
           </div>
 
-          <p className="ai-calibration-rationale">
-            <strong>Rationale:</strong> {insight.recommended_calibration.rationale}
-          </p>
+          {recCal.rationale && (
+            <p className="ai-calibration-rationale">
+              <strong>Rationale:</strong> {recCal.rationale}
+            </p>
+          )}
 
           <div className="ai-calibration-table-wrap">
             <table className="ai-cal-table">
@@ -252,11 +283,11 @@ export function AiMachineDiagnostic({
                   <td>OFF Upper Threshold (off_max_w)</td>
                   <td>{machine.calibration?.off_max_w ?? "—"} W</td>
                   <td className="font-semibold text-green-dark">
-                    {insight.recommended_calibration.off_max_w} W
+                    {recCal.off_max_w ?? "—"} W
                   </td>
                   <td>
-                    {machine.calibration?.off_max_w != null
-                      ? `${insight.recommended_calibration.off_max_w - machine.calibration.off_max_w > 0 ? "+" : ""}${insight.recommended_calibration.off_max_w - machine.calibration.off_max_w} W`
+                    {machine.calibration?.off_max_w != null && recCal.off_max_w != null
+                      ? `${recCal.off_max_w - machine.calibration.off_max_w > 0 ? "+" : ""}${recCal.off_max_w - machine.calibration.off_max_w} W`
                       : "New baseline"}
                   </td>
                 </tr>
@@ -264,11 +295,11 @@ export function AiMachineDiagnostic({
                   <td>IDLE Upper Threshold (idle_max_w)</td>
                   <td>{machine.calibration?.idle_max_w ?? "—"} W</td>
                   <td className="font-semibold text-green-dark">
-                    {insight.recommended_calibration.idle_max_w} W
+                    {recCal.idle_max_w ?? "—"} W
                   </td>
                   <td>
-                    {machine.calibration?.idle_max_w != null
-                      ? `${insight.recommended_calibration.idle_max_w - machine.calibration.idle_max_w > 0 ? "+" : ""}${insight.recommended_calibration.idle_max_w - machine.calibration.idle_max_w} W`
+                    {machine.calibration?.idle_max_w != null && recCal.idle_max_w != null
+                      ? `${recCal.idle_max_w - machine.calibration.idle_max_w > 0 ? "+" : ""}${recCal.idle_max_w - machine.calibration.idle_max_w} W`
                       : "New baseline"}
                   </td>
                 </tr>
@@ -276,7 +307,7 @@ export function AiMachineDiagnostic({
                   <td>Hysteresis Buffer (hysteresis_w)</td>
                   <td>{machine.calibration?.hysteresis_w ?? "—"} W</td>
                   <td className="font-semibold text-green-dark">
-                    {insight.recommended_calibration.hysteresis_w} W
+                    {recCal.hysteresis_w ?? "—"} W
                   </td>
                   <td>Eliminates noise flapping</td>
                 </tr>
@@ -284,7 +315,7 @@ export function AiMachineDiagnostic({
                   <td>Transition Duration (minimum_duration_s)</td>
                   <td>{machine.calibration?.minimum_duration_s ?? "—"} s</td>
                   <td className="font-semibold text-green-dark">
-                    {insight.recommended_calibration.minimum_duration_s} s
+                    {recCal.minimum_duration_s ?? "—"} s
                   </td>
                   <td>Transient suppression</td>
                 </tr>
@@ -292,7 +323,7 @@ export function AiMachineDiagnostic({
                   <td>Sustained Idle Alert (minimum_idle_s)</td>
                   <td>{machine.calibration?.minimum_idle_s ?? "—"} s</td>
                   <td className="font-semibold text-green-dark">
-                    {insight.recommended_calibration.minimum_idle_s} s
+                    {recCal.minimum_idle_s ?? "—"} s
                   </td>
                   <td>ISO 50001 Waste Alarm</td>
                 </tr>

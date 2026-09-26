@@ -15,18 +15,26 @@ export const money = (value: number | null | undefined, currency = "INR") =>
         currency,
         maximumFractionDigits: 2,
       }).format(value);
-export const date = (value: string | null | undefined) =>
+export const date = (value: string | null | undefined) => {
+  if (!value) return "Not available";
+  try {
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return "Not available";
+    return new Intl.DateTimeFormat("en-IN", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(d);
+  } catch {
+    return "Not available";
+  }
+};
+export const label = (value: string | null | undefined) =>
   !value
-    ? "Not available"
-    : new Intl.DateTimeFormat("en-IN", {
-        dateStyle: "medium",
-        timeStyle: "short",
-      }).format(new Date(value));
-export const label = (value: string) =>
-  value
-    .toLowerCase()
-    .replaceAll("_", " ")
-    .replace(/^./, (s) => s.toUpperCase());
+    ? "Unknown"
+    : String(value)
+        .toLowerCase()
+        .replaceAll("_", " ")
+        .replace(/^./, (s) => s.toUpperCase());
 export function safeRedirect(path: string | null): string {
   return path?.startsWith("/") && !path.startsWith("//") && !path.includes("\\")
     ? path

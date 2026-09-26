@@ -59,18 +59,26 @@ export default function TelemetryChart({
           />
           <XAxis
             dataKey="recorded_at"
-            tickFormatter={(v) =>
-              new Date(v).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            }
+            tickFormatter={(v) => {
+              if (!v) return "";
+              const d = new Date(v);
+              return isNaN(d.getTime())
+                ? ""
+                : d.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+            }}
             tick={{ fontSize: 11 }}
             minTickGap={40}
           />
           <YAxis unit={` ${unit}`} tick={{ fontSize: 11 }} width={70} />
           <Tooltip
-            labelFormatter={(v) => new Date(String(v)).toLocaleString()}
+            labelFormatter={(v) => {
+              if (!v) return "";
+              const d = new Date(String(v));
+              return isNaN(d.getTime()) ? String(v) : d.toLocaleString();
+            }}
           />
           <Area
             type="linear"

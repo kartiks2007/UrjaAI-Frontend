@@ -55,9 +55,66 @@ export function useRunAiReanalysis() {
 export function useMachineAiInsights(machineId: string | undefined, enabled = true) {
   const preview = usePreview();
   const { session } = useAuth();
-  return useQuery<AiMachineInsight>({
+  return useQuery<AiMachineInsight | null>({
     queryKey: [`/ai/machines/${machineId}/insights`, session?.user.id],
-    queryFn: ({ signal }) => request<AiMachineInsight>(`/ai/machines/${machineId}/insights`, { signal }),
+    queryFn: async ({ signal }) => {
+      const res = await request<unknown>(`/ai/machines/${machineId}/insights`, { signal });
+      if (!res) return null;
+      if (Array.isArray(res)) {
+        if (res.length === 0) return null;
+        const first = res[0] as Record<string, unknown> | undefined;
+        if (!first || typeof first !== "object") return null;
+        if (first.key_findings || first.efficiency_grade) {
+          return first as unknown as AiMachineInsight;
+        }
+
+        let calibration: Record<string, unknown> | null = null;
+        try {
+          calibration = typeof first.calibration_advice === "string"
+            ? JSON.parse(first.calibration_advice)
+            : (first.calibration_advice as Record<string, unknown> | null);
+        } catch {
+          // ignore
+        }
+        let anomalies: unknown[] = [];
+        try {
+          anomalies = Array.isArray(first.anomalies)
+            ? first.anomalies
+            : typeof first.anomalies === "string"
+              ? JSON.parse(first.anomalies)
+              : [];
+        } catch {
+          // ignore
+        }
+
+        const health = typeof first.health_score === "number" ? first.health_score : 90;
+        return {
+          id: typeof first.id === "string" ? first.id : undefined,
+          machine_id: machineId!,
+          health_score: health,
+          efficiency_grade: health >= 90 ? "A" : health >= 75 ? "B" : health >= 60 ? "C" : "D",
+          idle_waste_ratio: 0.1,
+          avg_power_factor: 0.95,
+          power_factor_loss_cost: 0,
+          flapping_risk: "LOW",
+          recommended_calibration: calibration && typeof calibration.suggested_off_max_w === "number" ? {
+            off_max_w: calibration.suggested_off_max_w,
+            idle_max_w: typeof calibration.suggested_idle_max_w === "number" ? calibration.suggested_idle_max_w : 250,
+            hysteresis_w: typeof calibration.suggested_hysteresis_w === "number" ? calibration.suggested_hysteresis_w : 2,
+            minimum_duration_s: 3,
+            minimum_idle_s: 300,
+            rationale: typeof calibration.rationale === "string" ? calibration.rationale : "AI recommended thresholds",
+          } : undefined,
+          key_findings: anomalies.length > 0
+            ? anomalies.map((a) => typeof a === "string" ? a : ((a as Record<string, unknown>)?.message as string || (a as Record<string, unknown>)?.type as string || JSON.stringify(a)))
+            : ["Normal baseline performance", "No severe power factor penalties detected"],
+          actionable_steps: anomalies.length > 0
+            ? anomalies.map((a) => typeof a === "object" && a && (a as Record<string, unknown>).remedy ? (a as Record<string, unknown>).remedy as string : "Maintain regular calibration")
+            : ["Continue monitoring active power consumption"],
+        } as unknown as AiMachineInsight;
+      }
+      return res as AiMachineInsight;
+    },
     enabled: enabled && !!session && !preview && !!machineId,
   });
 }

@@ -38,6 +38,7 @@ import {
 } from "../components/ui";
 import { DateFilter, useRange } from "../components/DateFilter";
 import { AiMachineDiagnostic } from "../components/AiMachineDiagnostic";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 const Chart = lazy(() => import("../components/TelemetryChart"));
 export function MachineList() {
   const path = useAppPath();
@@ -327,7 +328,7 @@ export function MachineDetail() {
   const canWrite =
     me.data?.role === "BUSINESS_OWNER" || me.data?.role === "ADMIN";
   const [revoke, setRevoke] = useState(false);
-  const revokeAction = useAction(`/devices/${m?.device?.id}/revoke`);
+  const revokeAction = useAction(m?.device?.id ? `/devices/${m.device.id}/revoke` : "");
   const [provisioned, setProvisioned] = useState<string | null>(null);
   return (
     <>
@@ -432,16 +433,18 @@ export function MachineDetail() {
                     ))}
                   </div>
                 </ResourceState>
-                <AiMachineDiagnostic
-                  machine={m}
-                  onOpenChat={(machineId, machineName) =>
-                    window.dispatchEvent(
-                      new CustomEvent("urjaai:open-ai-chat", {
-                        detail: { machineId, machineName },
-                      }),
-                    )
-                  }
-                />
+                <ErrorBoundary fallbackTitle="AI Machine Diagnostic unavailable">
+                  <AiMachineDiagnostic
+                    machine={m}
+                    onOpenChat={(machineId, machineName) =>
+                      window.dispatchEvent(
+                        new CustomEvent("urjaai:open-ai-chat", {
+                          detail: { machineId, machineName },
+                        }),
+                      )
+                    }
+                  />
+                </ErrorBoundary>
                 <Panel title="Power history">
                   <ResourceState query={history}>
                     <Suspense fallback={<p>Loading chart…</p>}>
@@ -452,16 +455,18 @@ export function MachineDetail() {
               </>
             )}
             {tab === "AI Diagnostic" && (
-              <AiMachineDiagnostic
-                machine={m}
-                onOpenChat={(machineId, machineName) =>
-                  window.dispatchEvent(
-                    new CustomEvent("urjaai:open-ai-chat", {
-                      detail: { machineId, machineName },
-                    }),
-                  )
-                }
-              />
+              <ErrorBoundary fallbackTitle="AI Machine Diagnostic unavailable">
+                <AiMachineDiagnostic
+                  machine={m}
+                  onOpenChat={(machineId, machineName) =>
+                    window.dispatchEvent(
+                      new CustomEvent("urjaai:open-ai-chat", {
+                        detail: { machineId, machineName },
+                      }),
+                    )
+                  }
+                />
+              </ErrorBoundary>
             )}
             {tab === "Analytics" && (
               <>
@@ -551,16 +556,18 @@ export function MachineDetail() {
             )}
             {tab === "Calibration" && (
               <>
-                <AiMachineDiagnostic
-                  machine={m}
-                  onOpenChat={(machineId, machineName) =>
-                    window.dispatchEvent(
-                      new CustomEvent("urjaai:open-ai-chat", {
-                        detail: { machineId, machineName },
-                      }),
-                    )
-                  }
-                />
+                <ErrorBoundary fallbackTitle="AI Machine Diagnostic unavailable">
+                  <AiMachineDiagnostic
+                    machine={m}
+                    onOpenChat={(machineId, machineName) =>
+                      window.dispatchEvent(
+                        new CustomEvent("urjaai:open-ai-chat", {
+                          detail: { machineId, machineName },
+                        }),
+                      )
+                    }
+                  />
+                </ErrorBoundary>
                 <Panel
                   title="Machine-specific calibration"
                   description="Record known OFF, IDLE and productive RUNNING baselines before setting thresholds."
