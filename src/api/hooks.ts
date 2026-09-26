@@ -1,14 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { request, ApiError } from "./client";
 import { useAuth, usePreview } from "../auth/AuthProvider";
-export function useResource<T>(path: string, refresh = false, enabled = true) {
+export function useResource<T>(
+  path: string,
+  refresh: boolean | number = false,
+  enabled = true,
+  options?: { staleTime?: number },
+) {
   const preview = usePreview();
   const { session } = useAuth();
+  const interval =
+    typeof refresh === "number"
+      ? refresh
+      : refresh
+        ? 30000
+        : false;
+
   return useQuery({
     queryKey: [path, session?.user.id],
     queryFn: ({ signal }) => request<T>(path, { signal }),
     enabled: enabled && !!session && !preview,
-    refetchInterval: refresh ? 30000 : false,
+    refetchInterval: interval,
+    staleTime:
+      options?.staleTime ??
+      (typeof refresh === "number" ? 0 : undefined),
     retry: (count, error) =>
       !(error instanceof ApiError && [401, 403, 404].includes(error.status)) &&
       count < 1,

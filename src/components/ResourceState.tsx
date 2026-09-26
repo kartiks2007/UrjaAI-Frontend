@@ -15,7 +15,7 @@ export function ResourceState<T>({
   if (preview) return children;
   if (query.isPending)
     return <Feedback kind="loading" title="Loading your organization data" />;
-  if (query.isError)
+  if (query.isError && !query.data)
     return (
       <Feedback
         kind="error"

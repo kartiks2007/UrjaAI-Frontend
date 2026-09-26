@@ -302,10 +302,10 @@ export function MachineDetail() {
   const preview = usePreview();
   const [params, setParams] = useSearchParams();
   const tab = params.get("tab") ?? "Overview";
-  const query = useResource<Machine>(`/machines/${id}`, true);
+  const query = useResource<Machine>(`/machines/${id}`, 4000);
   const latest = useResource<Telemetry | null>(
     `/machines/${id}/latest`,
-    true,
+    4000,
     tab === "Overview",
   );
   const range = useRange();
@@ -360,6 +360,10 @@ export function MachineDetail() {
               <Status value={m.machine_state} stale={m.state_is_stale} />
               <Status value={m.device_status} />
               <span className="muted">Last seen: {date(m.last_seen_at)}</span>
+              <span className="live-pill" title="Telemetry auto-refreshes every 4 seconds">
+                <span className="live-dot" />
+                Live 4s
+              </span>
             </div>
             {m.state_is_stale && (
               <Feedback
